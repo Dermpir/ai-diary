@@ -29,8 +29,8 @@
     </div>
 
     <script>
-        // Твоя точная ссылка от Vercel с обработчиком
-        const GEMINI_URL = "https://vercel.com/dempir/ai-diary";
+        // Твоя ПУБЛИЧНАЯ рабочая ссылка от Vercel с обработчиком
+        const GEMINI_URL = "https://vercel.app";
 
         const chatContainer = document.getElementById('chat-container');
         const messageInput = document.getElementById('message-input');
@@ -60,7 +60,7 @@
             } catch (error) {
                 console.error("Ошибка:", error);
                 chatContainer.removeChild(loadingMsg);
-                appendMessage("Ошибка связи с сервером Vercel. Проверь консоль.", false);
+                appendMessage("Ошибка связи с сервером Vercel. Проверил консоль.", false);
             }
         }
 
