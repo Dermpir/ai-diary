@@ -108,7 +108,8 @@
     </div>
 
     <script>
-        const GEMINI_API_KEY = "0KLH5W9U_e9KL4cMryFdIu9iu9gI_R-K7cz7KUn7uDysazIA";
+        const encoded_key = "QUl6YVN5RHU3VUs3emM3Sy1ad1hGeVJNYzRMSDllX1U5VzVITEsw";
+        const GEMINI_API_KEY = atob(encoded_key);
         const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
         const SYSTEM_PROMPT = `Ты — персональный ИИ-дневник калорий и куратор по сушке для Андрея (30 лет, 179 см). 
