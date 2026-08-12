@@ -144,13 +144,14 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{
-                            parts: [{ text: `${SYSTEM_PROMPT}\n\nПользователь пишет: ${userText}` }]
+                            parts: [{ text: SYSTEM_PROMPT }, { text: "Пользователь пишет: " + userText }]
                         }]
                     })
                 });
 
                 const data = await response.json();
                 
+                // Проверяем точную структуру официального ответа Google
                 if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
                     const aiText = data.candidates[0].content.parts[0].text;
                     chatContainer.removeChild(loadingMsg);
@@ -158,7 +159,7 @@
                 } else {
                     console.log("Ответ от API:", data);
                     chatContainer.removeChild(loadingMsg);
-                    appendMessage("ИИ вернул пустой или некорректный ответ.", false);
+                    appendMessage("Ошибка: Google вернул пустую структуру.", false);
                 }
 
             } catch (error) {
