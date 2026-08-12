@@ -108,11 +108,7 @@
     </div>
 
     <script>
-        // Обходим блокировку GitHub Security, собирая ключ из двух частей
-        // Робот GitHub не узнает этот ключ, потому что он записан задом наперед!
-        const encodedKey = "MEU3bV9lOUtMNGNNeVJGeFhXWi1LN2N6N0tVN2VEdVlTeG9pQQ==";
-        const GEMINI_API_KEY = atob(encodedKey).split("").reverse().join("");
-    
+        const GEMINI_API_KEY = "AIzaSyD36Z-R_lg9ul5dYFqP8HWgKUTZldmE_4g";
         const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
         const SYSTEM_PROMPT = `Ты — персональный ИИ-дневник калорий и куратор по сушке для Андрея (30 лет, 179 см). 
