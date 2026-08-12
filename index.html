@@ -144,28 +144,28 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{
-                            parts: [{ text: SYSTEM_PROMPT }, { text: "Пользователь пишет: " + userText }]
+                            parts: [{ text: `${SYSTEM_PROMPT}\n\nПользователь пишет: ${userText}` }]
                         }]
                     })
                 });
 
                 const data = await response.json();
                 
-                // Проверяем точную структуру официального ответа Google
+                // Исправленный разбор: в Gemini текст лежит в data.candidates[0].content.parts[0].text
                 if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
                     const aiText = data.candidates[0].content.parts[0].text;
                     chatContainer.removeChild(loadingMsg);
                     appendMessage(aiText, false);
                 } else {
-                    console.log("Ответ от API:", data);
+                    console.log("Ответ от API Google:", data);
                     chatContainer.removeChild(loadingMsg);
-                    appendMessage("Ошибка: Google вернул пустую структуру.", false);
+                    appendMessage("Ошибка разбора ответа ИИ. Посмотри лог в консоли.", false);
                 }
 
             } catch (error) {
                 console.error("Детали ошибки:", error);
                 chatContainer.removeChild(loadingMsg);
-                appendMessage("Ошибка связи с ИИ. Проверь консоль браузера.", false);
+                appendMessage("Ошибка сети с сервером ИИ.", false);
             }
         }
 
