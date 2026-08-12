@@ -113,7 +113,7 @@
         const key_part2 = "Mc4LK9e_U9W5HLK0";
         const GEMINI_API_KEY = key_part1 + key_part2;
         
-        const GEMINI_URL = `https://googleapis.com{GEMINI_API_KEY}`;
+        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
         const SYSTEM_PROMPT = `Ты — персональный ИИ-дневник калорий и куратор по сушке для Андрея (30 лет, 179 см). 
         Его актуальный вес: 89,55 кг. Цель: 77-80 кг. 15 августа он улетает в Казахстан, задача сейчас — держать дефицит.
