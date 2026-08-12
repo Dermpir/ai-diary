@@ -1,9 +1,10 @@
 export default async function handler(req, res) {
-    // Разрешаем вашему сайту подключаться к этому мини-серверу
+    // Жестко разрешаем вашему сайту присылать любые заголовки и JSON
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
 
+    // Если браузер делает предварительную проверку связи (preflight) — сразу отвечаем "Успешно"
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
@@ -38,6 +39,7 @@ export default async function handler(req, res) {
         const aiText = data.candidates[0].content.parts[0].text;
         return res.status(200).json({ text: aiText });
     } catch (error) {
+        console.error(error);
         return res.status(500).json({ error: 'Ошибка сервера при запросе к Gemini' });
     }
 }
