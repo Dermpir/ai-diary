@@ -111,7 +111,8 @@
                     ...memory
                 ];
 
-                const response = await fetch('https://yandex.net', {
+                // ИСПРАВЛЕННАЯ СТРОКА С ПРОКСИ ДЛЯ ОБХОДА БЛОКИРОВКИ CORS:
+                const response = await fetch('https://allorigins.win' + encodeURIComponent('https://yandex.net'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
