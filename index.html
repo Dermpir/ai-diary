@@ -3,13 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ИИ Дневник Сушки</title>
+    <title>ИИ Дневник Сушки (Яндекс)</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #121214; color: #ffffff; display: flex; flex-direction: column; height: 100vh; }
-        header { background-color: #1a1a1e; padding: 15px; text-align: center; font-size: 1.2rem; font-weight: bold; border-bottom: 1px solid #29292e; color: #a370f7; }
+        header { background-color: #1a1a1e; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #29292e; color: #a370f7; font-weight: bold; }
+        .nav-buttons { display: flex; gap: 10px; }
+        .hdr-btn { background: none; border: 1px solid #3e3e4a; color: #8e8e93; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+        .hdr-btn:hover { background-color: #29292e; }
+        #clear-btn:hover { color: #ff453a; }
         #chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-        .message { max-width: 75%; padding: 12px 16px; border-radius: 16px; font-size: 0.95rem; line-height: 1.4; }
+        .message { max-width: 75%; padding: 12px 16px; border-radius: 16px; font-size: 0.95rem; line-height: 1.4; white-space: pre-wrap; }
         .user-message { background-color: #a370f7; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
         .ai-message { background-color: #1a1a1e; color: #e1e1e6; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #29292e; }
         #input-container { background-color: #1a1a1e; padding: 15px; display: flex; gap: 10px; border-top: 1px solid #29292e; }
@@ -19,24 +23,70 @@
 </head>
 <body>
 
-    <header>ИИ Куратор: Неделя 6</header>
-    <div id="chat-container">
-        <div class="message ai-message">Привет, Андрей! Твой профиль ЖКТ загружен, вес 89,55 кг зафиксирован. Что ты съел или какую активность выполнил?</div>
-    </div>
+    <header>
+        <span>ИИ Куратор (ЯндексГПТ)</span>
+        <div class="nav-buttons">
+            <button id="key-btn" class="hdr-btn">⚙️ Ключи</button>
+            <button id="clear-btn" class="hdr-btn">Очистить чат</button>
+        </div>
+    </header>
+    
+    <div id="chat-container"></div>
+    
     <div id="input-container">
         <input type="text" id="message-input" placeholder="Введите обед или тренировку..." autocomplete="off">
         <button id="send-btn">✈️</button>
     </div>
 
     <script>
-        // Твоя ПУБЛИЧНАЯ рабочая ссылка от Vercel с обработчиком
-        const GEMINI_URL = "https://ai-diary-6822h6yio-dempir.vercel.app/";
+        // ================= ПОЛНОСТЬЮ ЧИСТАЯ ИНИЦИАЛИЗАЦИЯ КЛЮЧЕЙ =================
+        let YANDEX_API_KEY = localStorage.getItem('yandex_api_key');
+        let YANDEX_FOLDER_ID = localStorage.getItem('yandex_folder_id');
+
+        function checkKeys() {
+            if (!YANDEX_API_KEY || !YANDEX_FOLDER_ID) {
+                YANDEX_API_KEY = prompt("Введите ваш Yandex API Key:");
+                YANDEX_FOLDER_ID = prompt("Введите ваш Yandex Folder ID:");
+                
+                if (YANDEX_API_KEY && YANDEX_FOLDER_ID) {
+                    localStorage.setItem('yandex_api_key', YANDEX_API_KEY.trim());
+                    localStorage.setItem('yandex_folder_id', YANDEX_FOLDER_ID.trim());
+                    location.reload();
+                } else {
+                    alert("Внимание! Без ключей дневник калорий работать не сможет.");
+                }
+            }
+        }
+        // =========================================================================
+
+        const SYSTEM_PROMPT = "Ты — персональный ИИ-дневник калорий и куратор по сушке для Андрея (30 лет, 179 см).\n" +
+            "Его актуальный вес: 89,55 кг. Цель: 77-80 кг. 15 августа он улетает в Казахстан, задача сейчас — держать дефицит.\n" +
+            "ЖЕСТКИЕ ПРАВИЛА ЖКТ: У Андрея были сбои (спазмы, вздутие). Исключить лактозу на ночь, сырые огурцы микродозами. Тяжелую еду контролировать. При перегрузках напоминай принять 1-2 таб. П...\n" +
+            "ПРАВИЛА ПОДСЧЕТА: Базовый лимит 2150 ккал, белок строго 160-180г. Если указано 'на двоих' или 'половина' — дели порцию пополам и считай только его КБЖУ.\n" +
+            "Отвечай четко, емко, считай КБЖУ каждого продукта и пиши итоговый статус за прием пищи. Общайся по-дружески, но профессионально.";
 
         const chatContainer = document.getElementById('chat-container');
         const messageInput = document.getElementById('message-input');
         const sendBtn = document.getElementById('send-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const keyBtn = document.getElementById('key-btn');
 
-        function appendMessage(text, isUser) {
+        let memory = [];
+
+        function loadHistory() {
+            const savedMemory = localStorage.getItem('ai_diary_history');
+            if (savedMemory) {
+                memory = JSON.parse(savedMemory);
+                memory.forEach(msg => {
+                    appendMessageVisual(msg.text, msg.role === 'user');
+                });
+            } else {
+                const welcomeText = "Привет, Андрей! Я полностью настроен на YandexGPT. Твой профиль ЖКТ загружен, вес 89,55 кг зафиксирован. Что ты съел или какую активность выполнил?";
+                appendMessageVisual(welcomeText, false);
+            }
+        }
+
+        function appendMessageVisual(text, isUser) {
             const msgDiv = document.createElement('div');
             msgDiv.classList.add('message', isUser ? 'user-message' : 'ai-message');
             msgDiv.innerText = text;
@@ -45,33 +95,90 @@
             return msgDiv;
         }
 
-        async function sendMessageToGemini(userText) {
-            const loadingMsg = appendMessage("Куратор думает...", false);
+        async function sendMessageToYandexGPT(userText) {
+            if (!YANDEX_API_KEY || !YANDEX_FOLDER_ID) {
+                alert("Сначала укажите ключи доступа в настройках!");
+                return;
+            }
+
+            const loadingMsg = appendMessageVisual("Куратор думает...", false);
+            memory.push({ role: 'user', text: userText });
+            if (memory.length > 20) memory.shift();
+
             try {
-                const response = await fetch(GEMINI_URL, {
+                const messagesToSend = [
+                    { role: 'system', text: SYSTEM_PROMPT },
+                    ...memory
+                ];
+
+                const response = await fetch('https://yandex.net', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: userText })
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Api-Key ${YANDEX_API_KEY}`,
+                        'x-folder-id': YANDEX_FOLDER_ID
+                    },
+                    body: JSON.stringify({
+                        modelUri: `gpt://${YANDEX_FOLDER_ID}/yandexgpt/latest`,
+                        completionOptions: { stream: false, temperature: 0.6, maxTokens: "2000" },
+                        messages: messagesToSend
+                    })
                 });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.message || 'Ошибка сети Yandex Cloud');
+                }
 
                 const data = await response.json();
                 chatContainer.removeChild(loadingMsg);
-                appendMessage(data.text, false);
+
+                const aiText = data.result.alternatives.message.text;
+                appendMessageVisual(aiText, false);
+
+                memory.push({ role: 'assistant', text: aiText });
+                localStorage.setItem('ai_diary_history', JSON.stringify(memory));
+
             } catch (error) {
                 console.error("Ошибка:", error);
-                chatContainer.removeChild(loadingMsg);
-                appendMessage("Ошибка связи с сервером Vercel. Проверил консоль.", false);
+                if (chatContainer.contains(loadingMsg)) {
+                    chatContainer.removeChild(loadingMsg);
+                }
+                appendMessageVisual(`Ошибка: ${error.message}. Убедитесь, что ключи введены верно и на балансе Яндекса активен стартовый грант.`, false);
+                memory.pop();
             }
         }
 
         sendBtn.addEventListener('click', () => {
             const text = messageInput.value.trim();
             if (!text) return;
-            appendMessage(text, true);
+            appendMessageVisual(text, true);
             messageInput.value = '';
-            sendMessageToGemini(text);
+            sendMessageToYandexGPT(text);
         });
+
         messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendBtn.click(); });
+
+        clearBtn.addEventListener('click', () => {
+            if (confirm("Очистить историю текущего дня?")) {
+                localStorage.removeItem('ai_diary_history');
+                chatContainer.innerHTML = '';
+                memory = [];
+                loadHistory();
+            }
+        });
+
+        keyBtn.addEventListener('click', () => {
+            localStorage.removeItem('yandex_api_key');
+            localStorage.removeItem('yandex_folder_id');
+            YANDEX_API_KEY = null;
+            YANDEX_FOLDER_ID = null;
+            checkKeys();
+        });
+
+        // Запуск проверок при старте страницы
+        checkKeys();
+        loadHistory();
     </script>
 </body>
 </html>
