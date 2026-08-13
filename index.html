@@ -39,13 +39,13 @@
     </div>
 
     <script>
-        // ================= ПОЛНОСТЬЮ ЧИСТАЯ ИНИЦИАЛИЗАЦИЯ КЛЮЧЕЙ =================
+        // ================= ИНИЦИАЛИЗАЦИЯ КЛЮЧЕЙ =================
         let YANDEX_API_KEY = localStorage.getItem('yandex_api_key');
         let YANDEX_FOLDER_ID = localStorage.getItem('yandex_folder_id');
 
         function checkKeys() {
             if (!YANDEX_API_KEY || !YANDEX_FOLDER_ID) {
-                YANDEX_API_KEY = prompt("Введите ваш Yandex API Key:");
+                YANDEX_API_KEY = prompt("Введите ваш Yandex API Key (начинается на AQVN...):");
                 YANDEX_FOLDER_ID = prompt("Введите ваш Yandex Folder ID:");
                 
                 if (YANDEX_API_KEY && YANDEX_FOLDER_ID) {
@@ -57,7 +57,7 @@
                 }
             }
         }
-        // =========================================================================
+        // ========================================================
 
         const SYSTEM_PROMPT = "Ты — персональный ИИ-дневник калорий и куратор по сушке для Андрея (30 лет, 179 см).\n" +
             "Его актуальный вес: 89,55 кг. Цель: 77-80 кг. 15 августа он улетает в Казахстан, задача сейчас — держать дефицит.\n" +
@@ -111,30 +111,29 @@
                     ...memory
                 ];
 
-                // ИСПРАВЛЕННАЯ СТРОКА С ПРОКСИ ДЛЯ ОБХОДА БЛОКИРОВКИ CORS:
-                const response = await fetch('https://herokuapp.com', {
+                // Важное исправление: используем специальный API-эндпоинт для AI Studio, который разрешен для браузеров
+                const response = await fetch('https://yandex.net', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Api-Key ${YANDEX_API_KEY}`,
-                        'x-folder-id': YANDEX_FOLDER_ID
+                        'Authorization': `Api-Key ${YANDEX_API_KEY}`
                     },
                     body: JSON.stringify({
-                        modelUri: `gpt://${YANDEX_FOLDER_ID}/yandexgpt/latest`,
-                        completionOptions: { stream: false, temperature: 0.6, maxTokens: "2000" },
+                        modelUri: `gpt://${YANDEX_FOLDER_ID}/yandexgpt-lite/latest`,
+                        completionOptions: { stream: false, temperature: 0.6, maxTokens: 2000 },
                         messages: messagesToSend
                     })
                 });
 
                 if (!response.ok) {
                     const errData = await response.json();
-                    throw new Error(errData.message || 'Ошибка сети Yandex Cloud');
+                    throw new Error(errData.message || `Ошибка сервера: ${response.status}`);
                 }
 
                 const data = await response.json();
                 chatContainer.removeChild(loadingMsg);
 
-                const aiText = data.result.alternatives.message.text;
+                const aiText = data.result.alternatives[0].message.text;
                 appendMessageVisual(aiText, false);
 
                 memory.push({ role: 'assistant', text: aiText });
@@ -145,7 +144,7 @@
                 if (chatContainer.contains(loadingMsg)) {
                     chatContainer.removeChild(loadingMsg);
                 }
-                appendMessageVisual(`Ошибка: ${error.message}. Убедитесь, что ключи введены верно и на балансе Яндекса активен стартовый грант.`, false);
+                appendMessageVisual(`Ошибка: ${error.message}. Проверьте баланс аккаунта или введите ключи заново.`, false);
                 memory.pop();
             }
         }
@@ -177,7 +176,6 @@
             checkKeys();
         });
 
-        // Запуск проверок при старте страницы
         checkKeys();
         loadHistory();
     </script>
